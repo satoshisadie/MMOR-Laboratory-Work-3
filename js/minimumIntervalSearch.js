@@ -110,18 +110,34 @@ var goldenSection = {
 };
 
 var fibonacci = {
-    getFibonacciNumber: function (n) {
-        var sqrt5 = Math.sqrt(5);
-        return (Math.pow((1 + sqrt5) / 2, n) - Math.pow((1 - sqrt5) / 2, n)) / sqrt5;
+    getIterationsCount: function (epsilon, intervalStart, intervalEnd) {
+        var n = 1;
+
+        while ((intervalEnd - intervalStart) / this.getFibonacciNumber(n + 2) >= epsilon) {
+            n++;
+        }
+
+        return n;
     },
 
-    search : function (calculationsCount, intervalStart, intervalEnd, f) {
+    getFibonacciNumber: function (n) {
+        if (n == 0 || n== 1) {
+            return 1;
+        } else {
+            return this.getFibonacciNumber(n - 1) + this.getFibonacciNumber(n - 2);
+        }
+    },
+
+    search : function (epsilon, intervalStart, intervalEnd, f) {
+        var iterationsCount = this.getIterationsCount(epsilon, intervalStart, intervalEnd);
+
         var result = {
-            functionCalculationsCount: 2 + calculationsCount
+            functionCalculationsCount: 2 + iterationsCount,
+            iterationsCount: iterationsCount
         };
 
-        var nthNumber = this.getFibonacciNumber(calculationsCount);
-        var nthPlusTwoNumber = this.getFibonacciNumber(calculationsCount + 2);
+        var nthNumber = this.getFibonacciNumber(iterationsCount);
+        var nthPlusTwoNumber = this.getFibonacciNumber(iterationsCount + 2);
 
         var u = intervalStart + nthNumber / nthPlusTwoNumber * (intervalEnd - intervalStart);
         var v = intervalStart + intervalEnd - u;
@@ -129,7 +145,7 @@ var fibonacci = {
         var fu = f(u);
         var fv = f(v);
 
-        for (var i = 0; i < calculationsCount; i++) {
+        for (var i = 0; i < iterationsCount; i++) {
             if (fu <= fv) {
                 result.x = u;
                 result.fx = fu;
@@ -155,46 +171,70 @@ var fibonacci = {
     }
 };
 
-//var quadraticInterpolation = {
-//    search : function (calculationsCount, intervalStart, intervalEnd, f) {
-//        var result = {
-//            functionCalculationsCount: 2 + calculationsCount
-//        };
-//
-//        var nthNumber = this.getFibonacciNumber(calculationsCount);
-//        var nthPlusTwoNumber = this.getFibonacciNumber(calculationsCount + 2);
-//
-//        var u = intervalStart + nthNumber / nthPlusTwoNumber * (intervalEnd - intervalStart);
-//        var v = intervalStart + intervalEnd - u;
-//
-//        var fu = f(u);
-//        var fv = f(v);
-//
-//        for (var i = 0; i < calculationsCount; i++) {
-//            if (fu <= fv) {
-//                result.x = u;
-//                result.fx = fu;
-//
-//                intervalEnd = v;
-//                v = u;
-//                fv = fu;
-//                u = intervalStart + intervalEnd - v;
-//                fu = f(u);
-//            } else {
-//                result.x = v;
-//                result.fx = fv;
-//
-//                intervalStart = u;
-//                u = v;
-//                fu = fv;
-//                v = intervalStart + intervalEnd - u;
-//                fv = f(v);
-//            }
-//        }
-//
-//        return result;
-//    }
-//};
+var quadraticInterpolation = {
+    calculateXmin: function (x0, x1, x2, f) {
+        var result = {
+            fx0: f(x0),
+            fx1: f(x1),
+            fx2: f(x2)
+        };
+
+        result.x = x1 + 1 / 2 * (Math.pow(x2 - x1, 2) * (result.fx0 - result.fx1) -
+                                 Math.pow(x1 - x0, 2) * (result.fx2 - result.fx1)) /
+                                ((x2 - x1) * (result.fx0 - result.fx1) +
+                                 (x1 - x0) * (result.fx2 - result.fx1));
+
+        return result;
+    },
+
+    getTriple: function(x0, x1, x2, x3, fx0, fx1, fx2, fx3) {
+        var result = {};
+
+        if (fx1 < fx2) {
+            result.x0 = x0;
+            result.x1 = x1;
+            result.x2 = x2;
+        } else {
+            result.x0 = x1;
+            result.x1 = x2;
+            result.x2 = x3;
+        }
+
+        return result;
+    },
+
+    search : function (epsilon, intervalStart, intervalEnd, f) {
+        var result = {
+            iterationsCount: 0,
+            functionCalculationsCount: 0
+        };
+
+        var x0 = intervalStart;
+        var x1 = minimumIntervalSearch.searchInterval(intervalStart, f, 0.01);
+        var x2 = intervalEnd;
+        var x3;
+
+        var minCalculation = this.calculateXmin(x0, x1, x2, f);
+        result.x = minCalculation.x;
+        result.functionCalculationsCount += 3;
+
+        while (Math.abs(result.x - x1) > epsilon) {
+            if (result.x > x1) {
+                x3 = x2;
+                x2 = result.x;
+            } else {
+                x3 = x2;
+                x2 = x1;
+                x1 = result.x;
+            }
+
+            var triple = this.getTriple(x0, x1, x2, x3, minCalculation.fx0, minCalculation.fx1, minCalculation.fx2)
+        }
+
+        result.fx = f(result.x);
+        return result;
+    }
+};
 
 //var interval = minimumIntervalSearch.searchInterval(3, f, 0.01);
 //alert(interval.start + '   ' + interval.end);
@@ -205,5 +245,8 @@ var fibonacci = {
 //var goldenSectionResult = goldenSection.search(1e-4, 2, 7, f);
 //alert(goldenSectionResult.x + '   ' + goldenSectionResult.iterationsCount);
 
-//var fibonacciResult = fibonacci.search(20, 2, 7, f);
-//alert(fibonacciResult.x + '   ' + fibonacciResult.functionCalculationsCount);
+var fibonacciResult = fibonacci.search(1e-8, 2, 7, f);
+alert(fibonacciResult.x + '   ' + fibonacciResult.functionCalculationsCount);
+
+//var quadraticInterpolationResult = quadraticInterpolation.search(1e-4, 2, 7, f);
+//alert(quadraticInterpolationResult.x + '   ' + quadraticInterpolationResult.iterationsCount);
