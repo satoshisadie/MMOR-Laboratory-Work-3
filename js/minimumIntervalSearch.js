@@ -172,64 +172,63 @@ var fibonacci = {
 };
 
 var quadraticInterpolation = {
-    calculateXmin: function (x0, x1, x2, f) {
-        var result = {
-            fx0: f(x0),
-            fx1: f(x1),
-            fx2: f(x2)
-        };
+    calculateXmin: function (xs, f) {
+        xs.fx0 = f(xs.x0);
+        xs.fx1 = f(xs.x1);
+        xs.fx2 = f(xs.x2);
 
-        result.x = x1 + 1 / 2 * (Math.pow(x2 - x1, 2) * (result.fx0 - result.fx1) -
-                                 Math.pow(x1 - x0, 2) * (result.fx2 - result.fx1)) /
-                                ((x2 - x1) * (result.fx0 - result.fx1) +
-                                 (x1 - x0) * (result.fx2 - result.fx1));
-
-        return result;
+        return xs.x1 + 1 / 2 * (Math.pow(xs.x2 - xs.x1, 2) * (xs.fx0 - xs.fx1) -
+                                Math.pow(xs.x1 - xs.x0, 2) * (xs.fx2 - xs.fx1)) /
+                               ((xs.x2 - xs.x1) * (xs.fx0 - xs.fx1) +
+                                (xs.x1 - xs.x0) * (xs.fx2 - xs.fx1));
     },
-
-    getTriple: function(x0, x1, x2, x3, fx0, fx1, fx2, fx3) {
-        var result = {};
-
-        if (fx1 < fx2) {
-            result.x0 = x0;
-            result.x1 = x1;
-            result.x2 = x2;
-        } else {
-            result.x0 = x1;
-            result.x1 = x2;
-            result.x2 = x3;
+    reorderForBestTriple: function(xs) {
+        if (xs.fx1 > xs.fx2 ||
+            xs.fx1 == xs.fx2 && xs.x2 - xs.x0 > xs.x3 - xs.x1)
+        {
+            xs.x0 = xs.x1;
+            xs.x1 = xs.x2;
+            xs.x2 = xs.x3;
         }
-
-        return result;
     },
-
+    assignX3: function(xs, xMin, fxMin) {
+        if (xMin > xs.x1) {
+            xs.x3 = xs.x2;
+            xs.fx3 = xs.fx2;
+            xs.x2 = xMin;
+            xs.fx2 = fxMin;
+        } else {
+            xs.x3 = xs.x2;
+            xs.fx3 = xs.fx2;
+            xs.x2 = xs.x1;
+            xs.fx2 = xs.fx1;
+            xs.x1 = xMin;
+            xs.fx1 = fxMin;
+        }
+    },
     search : function (epsilon, intervalStart, intervalEnd, f) {
         var result = {
             iterationsCount: 0,
             functionCalculationsCount: 0
         };
 
-        var x0 = intervalStart;
-        var x1 = minimumIntervalSearch.searchInterval(intervalStart, f, 0.01);
-        var x2 = intervalEnd;
-        var x3;
+        var xs = {
+            x0: intervalStart,
+            x1: minimumIntervalSearch.searchInterval(intervalStart, f, 0.01).start,
+            x2: intervalEnd
+        };
 
-        var minCalculation = this.calculateXmin(x0, x1, x2, f);
-        result.x = minCalculation.x;
-        result.functionCalculationsCount += 3;
+        do {
+            var xMin = this.calculateXmin(xs, f);
 
-        while (Math.abs(result.x - x1) > epsilon) {
-            if (result.x > x1) {
-                x3 = x2;
-                x2 = result.x;
-            } else {
-                x3 = x2;
-                x2 = x1;
-                x1 = result.x;
-            }
+            result.x = xMin;
+            result.fx = f(xMin);
+            result.iterationsCount++;
+            result.functionCalculationsCount += 4;
 
-            var triple = this.getTriple(x0, x1, x2, x3, minCalculation.fx0, minCalculation.fx1, minCalculation.fx2)
-        }
+            this.assignX3(xs, result.x, result.fx);
+            this.reorderForBestTriple(xs);
+        } while (Math.abs(result.x - xs.x1) > epsilon);
 
         result.fx = f(result.x);
         return result;
@@ -245,8 +244,8 @@ var quadraticInterpolation = {
 //var goldenSectionResult = goldenSection.search(1e-4, 2, 7, f);
 //alert(goldenSectionResult.x + '   ' + goldenSectionResult.iterationsCount);
 
-var fibonacciResult = fibonacci.search(1e-8, 2, 7, f);
-alert(fibonacciResult.x + '   ' + fibonacciResult.functionCalculationsCount);
+//var fibonacciResult = fibonacci.search(1e-8, 2, 7, f);
+//alert(fibonacciResult.x + '   ' + fibonacciResult.functionCalculationsCount);
 
-//var quadraticInterpolationResult = quadraticInterpolation.search(1e-4, 2, 7, f);
-//alert(quadraticInterpolationResult.x + '   ' + quadraticInterpolationResult.iterationsCount);
+var quadraticInterpolationResult = quadraticInterpolation.search(1e-15, 2, 7, f);
+alert(quadraticInterpolationResult.x + '   ' + quadraticInterpolationResult.functionCalculationsCount);
