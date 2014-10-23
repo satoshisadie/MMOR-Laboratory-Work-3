@@ -173,9 +173,9 @@ var fibonacci = {
 
 var quadraticInterpolation = {
     calculateXmin: function (xs, f) {
-        xs.fx0 = f(xs.x0);
-        xs.fx1 = f(xs.x1);
-        xs.fx2 = f(xs.x2);
+        xs.fx0 = xs.fx0 || f(xs.x0);
+        xs.fx1 = xs.fx1 || f(xs.x1);
+        xs.fx2 = xs.fx2 || f(xs.x2);
 
         return xs.x1 + 1 / 2 * (Math.pow(xs.x2 - xs.x1, 2) * (xs.fx0 - xs.fx1) -
                                 Math.pow(xs.x1 - xs.x0, 2) * (xs.fx2 - xs.fx1)) /
@@ -187,8 +187,11 @@ var quadraticInterpolation = {
             xs.fx1 == xs.fx2 && xs.x2 - xs.x0 > xs.x3 - xs.x1)
         {
             xs.x0 = xs.x1;
+            xs.fx0 = xs.fx1;
             xs.x1 = xs.x2;
+            xs.fx1 = xs.fx2;
             xs.x2 = xs.x3;
+            xs.fx2 = xs.fx3;
         }
     },
     assignX3: function(xs, xMin, fxMin) {
@@ -209,7 +212,7 @@ var quadraticInterpolation = {
     search : function (epsilon, intervalStart, intervalEnd, f) {
         var result = {
             iterationsCount: 0,
-            functionCalculationsCount: 0
+            functionCalculationsCount: 3
         };
 
         var xs = {
@@ -224,13 +227,12 @@ var quadraticInterpolation = {
             result.x = xMin;
             result.fx = f(xMin);
             result.iterationsCount++;
-            result.functionCalculationsCount += 4;
+            result.functionCalculationsCount++;
 
             this.assignX3(xs, result.x, result.fx);
             this.reorderForBestTriple(xs);
         } while (Math.abs(result.x - xs.x1) > epsilon);
 
-        result.fx = f(result.x);
         return result;
     }
 };
@@ -241,11 +243,11 @@ var quadraticInterpolation = {
 //var dichotomyResult = dichotomy.search(1e-4, 1e-4 / 2, 2, 7, f);
 //alert(dichotomyResult.x + '   ' + dichotomyResult.iterationsCount);
 
-var goldenSectionResult = goldenSection.search(1e-8, 2, 7, f);
-alert(goldenSectionResult.x + '   ' + goldenSectionResult.iterationsCount);
+//var goldenSectionResult = goldenSection.search(1e-8, 2, 7, f);
+//alert(goldenSectionResult.x + '   ' + goldenSectionResult.iterationsCount);
 
 //var fibonacciResult = fibonacci.search(1e-8, 2, 7, f);
 //alert(fibonacciResult.x + '   ' + fibonacciResult.functionCalculationsCount);
 //
-//var quadraticInterpolationResult = quadraticInterpolation.search(1e-4, 2, 7, f);
-//alert(quadraticInterpolationResult.x + '   ' + quadraticInterpolationResult.functionCalculationsCount);
+var quadraticInterpolationResult = quadraticInterpolation.search(1e-4, 2, 7, f);
+alert(quadraticInterpolationResult.x + '   ' + quadraticInterpolationResult.functionCalculationsCount);
