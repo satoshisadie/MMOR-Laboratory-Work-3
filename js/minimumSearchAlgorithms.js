@@ -1,7 +1,3 @@
-function f(x) {
-    return Math.log(x) / Math.log(10) + Math.sin(x);
-}
-
 var minimumIntervalSearch = {
     searchInterval: function (x0, f, step) {
         var xRight = this.checkDirection(x0, f, step);
@@ -64,6 +60,7 @@ var dichotomy = {
         } while (intervalEnd - intervalStart > epsilon);
 
         result.functionCalculationsCount = 2 * result.iterationsCount;
+        result.fx = f(result.x);
         return result;
     }
 };
@@ -240,14 +237,27 @@ var quadraticInterpolation = {
 //var interval = minimumIntervalSearch.searchInterval(3, f, 0.01);
 //alert(interval.start + '   ' + interval.end);
 
-//var dichotomyResult = dichotomy.search(1e-4, 1e-4 / 2, 2, 7, f);
-//alert(dichotomyResult.x + '   ' + dichotomyResult.iterationsCount);
+function f(x) {
+    return Math.log(x) / Math.log(10) + Math.sin(x);
+}
+var epsilon = 1e-8;
 
-//var goldenSectionResult = goldenSection.search(1e-8, 2, 7, f);
-//alert(goldenSectionResult.x + '   ' + goldenSectionResult.iterationsCount);
+var dichotomyResult = dichotomy.search(epsilon, epsilon / 2, 2, 7, f);
+alertFormatted(dichotomyResult, 'Dichotomy');
 
-//var fibonacciResult = fibonacci.search(1e-8, 2, 7, f);
-//alert(fibonacciResult.x + '   ' + fibonacciResult.functionCalculationsCount);
-//
-var quadraticInterpolationResult = quadraticInterpolation.search(1e-4, 2, 7, f);
-alert(quadraticInterpolationResult.x + '   ' + quadraticInterpolationResult.functionCalculationsCount);
+var goldenSectionResult = goldenSection.search(epsilon, 2, 7, f);
+alertFormatted(goldenSectionResult, 'Golden section');
+
+var fibonacciResult = fibonacci.search(epsilon, 2, 7, f);
+alertFormatted(fibonacciResult, 'Fibonacci');
+
+var quadraticInterpolationResult = quadraticInterpolation.search(epsilon, 2, 7, f);
+alertFormatted(quadraticInterpolationResult, 'Quadratic interpolation');
+
+function alertFormatted(result, method) {
+    alert(method + '\n' +
+          'Minimum x - ' + result.x + '\n' +
+          'Minimum f(x) - ' + result.fx + '\n' +
+          'Iterations count - ' + result.iterationsCount + '\n' +
+          'Function calculations count - ' + result.functionCalculationsCount);
+}
