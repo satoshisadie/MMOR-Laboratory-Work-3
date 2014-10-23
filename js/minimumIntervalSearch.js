@@ -28,7 +28,7 @@ var minimumIntervalSearch = {
         var fStart = f(intervalStart);
         var fEnd = f(intervalEnd);
 
-        while (fEnd <= fStart) {
+        while (fStart >= fEnd) {
             intervalStart = intervalEnd;
             intervalEnd = intervalStart + step;
 
@@ -241,11 +241,11 @@ var quadraticInterpolation = {
 //var dichotomyResult = dichotomy.search(1e-4, 1e-4 / 2, 2, 7, f);
 //alert(dichotomyResult.x + '   ' + dichotomyResult.iterationsCount);
 
-//var goldenSectionResult = goldenSection.search(1e-4, 2, 7, f);
-//alert(goldenSectionResult.x + '   ' + goldenSectionResult.iterationsCount);
+var goldenSectionResult = goldenSection.search(1e-8, 2, 7, f);
+alert(goldenSectionResult.x + '   ' + goldenSectionResult.iterationsCount);
 
 //var fibonacciResult = fibonacci.search(1e-8, 2, 7, f);
 //alert(fibonacciResult.x + '   ' + fibonacciResult.functionCalculationsCount);
-
-var quadraticInterpolationResult = quadraticInterpolation.search(1e-15, 2, 7, f);
-alert(quadraticInterpolationResult.x + '   ' + quadraticInterpolationResult.functionCalculationsCount);
+//
+//var quadraticInterpolationResult = quadraticInterpolation.search(1e-4, 2, 7, f);
+//alert(quadraticInterpolationResult.x + '   ' + quadraticInterpolationResult.functionCalculationsCount);
