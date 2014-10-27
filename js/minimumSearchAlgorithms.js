@@ -141,9 +141,9 @@ var goldenSection = {
 };
 
 var fibonacci = {
-    partition: function (intervalStart, intervalEnd, f, n) {
-        var nthNumber = this.getFibonacciNumber(n);
-        var nthPlusTwoNumber = this.getFibonacciNumber(n + 2);
+    partition: function (intervalStart, intervalEnd, f, n, k) {
+        var nthNumber = this.getFibonacciNumber(n - k);
+        var nthPlusTwoNumber = this.getFibonacciNumber(n - k + 2);
 
         var result = {};
         result.u = intervalStart + nthNumber / nthPlusTwoNumber * (intervalEnd - intervalStart);
@@ -182,7 +182,7 @@ var fibonacci = {
             iterationsCount: iterationsCount
         };
 
-        var partition = this.partition(intervalStart, intervalEnd, f, iterationsCount);
+        var partition = this.partition(intervalStart, intervalEnd, f, iterationsCount, 0);
 
         for (var i = 0; i < iterationsCount; i++) {
             if (partition.fu <= partition.fv) {
@@ -206,7 +206,7 @@ var fibonacci = {
             }
 
             if (partition.u >= partition.v) {
-                partition = this.partition(intervalStart, intervalEnd, f, iterationsCount);
+                partition = this.partition(intervalStart, intervalEnd, f, iterationsCount, i);
             }
         }
 
@@ -294,9 +294,9 @@ var epsilon = 1e-8;
 //var goldenSectionResult = goldenSection.search(epsilon, 2, 7, f);
 //alertFormatted(goldenSectionResult, 'Golden section');
 //
-//var fibonacciResult = fibonacci.search(epsilon, 2, 7, f);
-//alertFormatted(fibonacciResult, 'Fibonacci');
-//
+var fibonacciResult = fibonacci.search(epsilon, 2, 7, f);
+alertFormatted(fibonacciResult, 'Fibonacci');
+
 //var quadraticInterpolationResult = quadraticInterpolation.search(epsilon, 2, 7, f);
 //alertFormatted(quadraticInterpolationResult, 'Quadratic interpolation');
 //
