@@ -1,21 +1,39 @@
 var minimumIntervalSearch = {
-    searchInterval: function (x0, f, step) {
+    searchInterval: function (epsilon, x0, f, step) {
         var xRight = this.checkDirection(x0, f, step);
         var xLeft = this.checkDirection(x0, f, -step);
 
-        while(!xRight && !xLeft) {
+        while(!xRight && !xLeft && Math.abs(step) >= epsilon / 2) {
             step /= 2;
 
             xRight = this.checkDirection(x0, f, step);
             xLeft = this.checkDirection(x0, f, -step);
         }
 
-        return this.moveToMinimum(xRight ? xRight : xLeft, f, xRight ? step : -step);
+        var result;
+        if (Math.abs(step) >= epsilon / 2) {
+            if (xRight)
+                result = this.moveToMinimum(xRight, f, step);
+            else {
+                result = this.moveToMinimum(xLeft, f, -step);
+            }
+        } else {
+            result = {
+                x: x0,
+                fx: f(x0)
+            }
+        }
+
+        return result;
     },
 
     checkDirection: function (x0, f, step) {
         var x = x0 + step;
-        return f(x) <= f(x0) ? x : null;
+
+        var result = null;
+        if (f(x) <= f(x0)) result = x;
+
+        return result;
     },
 
     moveToMinimum: function (intervalStart, f, step) {
@@ -52,10 +70,14 @@ var dichotomy = {
             var fx1 = f(x1);
             var fx2 = f(x2);
 
-            intervalStart = fx1 <= fx2 ? intervalStart : x1;
-            intervalEnd = fx1 <= fx2 ? x2 : intervalEnd;
+            if (fx1 <= fx2) {
+                intervalEnd = x2;
+                result.x = intervalStart;
+            } else {
+                intervalStart = x1;
+                result.x = intervalEnd;
+            }
 
-            result.x = fx1 <= fx2 ? intervalStart : intervalEnd;
             result.iterationsCount++;
         } while (intervalEnd - intervalStart > epsilon);
 
@@ -66,40 +88,52 @@ var dichotomy = {
 };
 
 var goldenSection = {
+    partition: function (intervalStart, intervalEnd, f) {
+        var result = {};
+
+        result.u = intervalStart + (3 - Math.sqrt(5)) / 2 * (intervalEnd - intervalStart);
+        result.v = intervalStart + intervalEnd - result.u;
+        result.fu = f(result.u);
+        result.fv = f(result.v);
+
+        return result;
+    },
+
     search: function (epsilon, intervalStart, intervalEnd, f) {
         var result = {
             iterationsCount: 0,
             functionCalculationsCount: 2
         };
 
-        var u = intervalStart + (3 - Math.sqrt(5)) / 2 * (intervalEnd - intervalStart);
-        var v = intervalStart + intervalEnd - u;
-        var fu = f(u);
-        var fv = f(v);
+        var partition = this.partition(intervalStart, intervalEnd, f);
 
         do {
-            if (fu <= fv) {
-                result.x = u;
-                result.fx = fu;
+            if (partition.fu <= partition.fv) {
+                result.x = partition.u;
+                result.fx = partition.fu;
 
-                intervalEnd = v;
-                v = u;
-                fv = fu;
-                u = intervalStart + intervalEnd - v;
-                fu = f(u);
+                intervalEnd = partition.v;
+                partition.v = partition.u;
+                partition.fv = partition.fu;
+                partition.u = intervalStart + intervalEnd - partition.v;
+                partition.fu = f(partition.u);
             } else {
-                result.x = v;
-                result.fx = fv;
+                result.x = partition.v;
+                result.fx = partition.fv;
 
-                intervalStart = u;
-                u = v;
-                fu = fv;
-                v = intervalStart + intervalEnd - u;
-                fv = f(v);
+                intervalStart = partition.u;
+                partition.u = partition.v;
+                partition.fu = partition.fv;
+                partition.v = intervalStart + intervalEnd - partition.u;
+                partition.fv = f(partition.v);
             }
 
             result.iterationsCount++;
             result.functionCalculationsCount++;
+
+            if (partition.u >= partition.v) {
+                partition = this.partition(intervalStart, intervalEnd, f);
+            }
         } while (intervalEnd - intervalStart > epsilon);
 
         return result;
@@ -107,6 +141,19 @@ var goldenSection = {
 };
 
 var fibonacci = {
+    partition: function (intervalStart, intervalEnd, f, n) {
+        var nthNumber = this.getFibonacciNumber(n);
+        var nthPlusTwoNumber = this.getFibonacciNumber(n + 2);
+
+        var result = {};
+        result.u = intervalStart + nthNumber / nthPlusTwoNumber * (intervalEnd - intervalStart);
+        result.v = intervalStart + intervalEnd - result.u;
+        result.fu = f(result.u);
+        result.fv = f(result.v);
+
+        return result;
+    },
+
     getIterationsCount: function (epsilon, intervalStart, intervalEnd) {
         var n = 1;
 
@@ -118,11 +165,13 @@ var fibonacci = {
     },
 
     getFibonacciNumber: function (n) {
-        if (n == 0 || n== 1) {
-            return 1;
-        } else {
-            return this.getFibonacciNumber(n - 1) + this.getFibonacciNumber(n - 2);
+        var fibonacciNumbers = [1, 1];
+
+        for (var i = 2; i <= n; i++) {
+            fibonacciNumbers[i] = fibonacciNumbers[i - 1] + fibonacciNumbers[i - 2];
         }
+
+        return fibonacciNumbers[n];
     },
 
     search : function (epsilon, intervalStart, intervalEnd, f) {
@@ -133,34 +182,31 @@ var fibonacci = {
             iterationsCount: iterationsCount
         };
 
-        var nthNumber = this.getFibonacciNumber(iterationsCount);
-        var nthPlusTwoNumber = this.getFibonacciNumber(iterationsCount + 2);
-
-        var u = intervalStart + nthNumber / nthPlusTwoNumber * (intervalEnd - intervalStart);
-        var v = intervalStart + intervalEnd - u;
-
-        var fu = f(u);
-        var fv = f(v);
+        var partition = this.partition(intervalStart, intervalEnd, f, iterationsCount);
 
         for (var i = 0; i < iterationsCount; i++) {
-            if (fu <= fv) {
-                result.x = u;
-                result.fx = fu;
+            if (partition.fu <= partition.fv) {
+                result.x = partition.u;
+                result.fx = partition.fu;
 
-                intervalEnd = v;
-                v = u;
-                fv = fu;
-                u = intervalStart + intervalEnd - v;
-                fu = f(u);
+                intervalEnd = partition.v;
+                partition.v = partition.u;
+                partition.fv = partition.fu;
+                partition.u = intervalStart + intervalEnd - partition.v;
+                partition.fu = f(partition.u);
             } else {
-                result.x = v;
-                result.fx = fv;
+                result.x = partition.v;
+                result.fx = partition.fv;
 
-                intervalStart = u;
-                u = v;
-                fu = fv;
-                v = intervalStart + intervalEnd - u;
-                fv = f(v);
+                intervalStart = partition.u;
+                partition.u = partition.v;
+                partition.fu = partition.fv;
+                partition.v = intervalStart + intervalEnd - partition.u;
+                partition.fv = f(partition.v);
+            }
+
+            if (partition.u >= partition.v) {
+                partition = this.partition(intervalStart, intervalEnd, f, iterationsCount);
             }
         }
 
@@ -214,7 +260,7 @@ var quadraticInterpolation = {
 
         var xs = {
             x0: intervalStart,
-            x1: minimumIntervalSearch.searchInterval(intervalStart, f, 0.01).start,
+            x1: minimumIntervalSearch.searchInterval(epsilon, intervalStart, f, 1e-3).start,
             x2: intervalEnd
         };
 
@@ -242,18 +288,18 @@ function f(x) {
 }
 var epsilon = 1e-8;
 
-var dichotomyResult = dichotomy.search(epsilon, epsilon / 2, 2, 7, f);
-alertFormatted(dichotomyResult, 'Dichotomy');
-
-var goldenSectionResult = goldenSection.search(epsilon, 2, 7, f);
-alertFormatted(goldenSectionResult, 'Golden section');
-
-var fibonacciResult = fibonacci.search(epsilon, 2, 7, f);
-alertFormatted(fibonacciResult, 'Fibonacci');
-
-var quadraticInterpolationResult = quadraticInterpolation.search(epsilon, 2, 7, f);
-alertFormatted(quadraticInterpolationResult, 'Quadratic interpolation');
-
+//var dichotomyResult = dichotomy.search(epsilon, epsilon / 2, 2, 7, f);
+//alertFormatted(dichotomyResult, 'Dichotomy');
+//
+//var goldenSectionResult = goldenSection.search(epsilon, 2, 7, f);
+//alertFormatted(goldenSectionResult, 'Golden section');
+//
+//var fibonacciResult = fibonacci.search(epsilon, 2, 7, f);
+//alertFormatted(fibonacciResult, 'Fibonacci');
+//
+//var quadraticInterpolationResult = quadraticInterpolation.search(epsilon, 2, 7, f);
+//alertFormatted(quadraticInterpolationResult, 'Quadratic interpolation');
+//
 function alertFormatted(result, method) {
     alert(method + '\n' +
           'Minimum x - ' + result.x + '\n' +
@@ -261,3 +307,9 @@ function alertFormatted(result, method) {
           'Iterations count - ' + result.iterationsCount + '\n' +
           'Function calculations count - ' + result.functionCalculationsCount);
 }
+
+// Test Fibonacci numbers algorithm
+//alert(fibonacci.getFibonacciNumber(0) === 1);
+//alert(fibonacci.getFibonacciNumber(1) === 1);
+//alert(fibonacci.getFibonacciNumber(6) === 13);
+//alert(fibonacci.getFibonacciNumber(10) === 89);
