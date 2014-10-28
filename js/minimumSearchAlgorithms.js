@@ -51,8 +51,8 @@ var minimumIntervalSearch = {
         }
 
         return {
-            start: Math.min(intervalStart, intervalEnd),
-            end: Math.max(intervalStart, intervalEnd)
+            start: Math.min(intervalStart - step, intervalEnd),
+            end: Math.max(intervalStart - step, intervalEnd)
         };
     }
 };
@@ -280,13 +280,13 @@ var quadraticInterpolation = {
     }
 };
 
-//var interval = minimumIntervalSearch.searchInterval(3, f, 0.01);
-//alert(interval.start + '   ' + interval.end);
-
 function f(x) {
     return Math.log(x) / Math.log(10) + Math.sin(x);
 }
-var epsilon = 1e-8;
+var epsilon = 1e-4;
+
+var interval = minimumIntervalSearch.searchInterval(epsilon, 4, f, 0.5);
+alert(interval.start + '   ' + interval.end);
 
 //var dichotomyResult = dichotomy.search(epsilon, epsilon / 2, 2, 7, f);
 //alertFormatted(dichotomyResult, 'Dichotomy');
@@ -294,8 +294,8 @@ var epsilon = 1e-8;
 //var goldenSectionResult = goldenSection.search(epsilon, 2, 7, f);
 //alertFormatted(goldenSectionResult, 'Golden section');
 //
-var fibonacciResult = fibonacci.search(epsilon, 2, 7, f);
-alertFormatted(fibonacciResult, 'Fibonacci');
+//var fibonacciResult = fibonacci.search(epsilon, 2, 7, f);
+//alertFormatted(fibonacciResult, 'Fibonacci');
 
 //var quadraticInterpolationResult = quadraticInterpolation.search(epsilon, 2, 7, f);
 //alertFormatted(quadraticInterpolationResult, 'Quadratic interpolation');
